@@ -1,0 +1,123 @@
+{
+  "extends": [
+    "tslint:recommended"
+  ],
+  "rulesDirectory": [],
+  "linterOptions": {
+    "exclude": [
+      "Untitled-*.ts"
+    ]
+  },
+  "rules": {
+    "invalid-void": true,
+    "no-promise-as-boolean": true,
+    "array-type": [true, "array"],
+    "arrow-parens": false,
+    "align": [
+      true,
+      "elements",
+      "members",
+      "parameters",
+      "statements"
+    ],
+    "ban-comma-operator": true,
+    "binary-expression-operand-order": true,
+    "completed-docs": false,
+    "deprecation": true,
+    "encoding": true,
+    "indent": [true, "spaces", 2],
+    "interface-name": [true, "never-prefix"],
+    "linebreak-style": [true, "LF"],
+    "jsdoc-format": false,
+    "match-default-export-name": true,
+    "max-classes-per-file": false,
+    "max-line-length": { "options": 140 },
+    "member-access": [true, "no-public"],
+    "member-ordering": {
+      "options": {
+        "order": "fields-first"
+      }
+    },
+    "newline-before-return": true,
+    "newline-per-chained-call": false,
+    "no-console": [
+      true,
+      "log",
+      "count",
+      "debug",
+      "info",
+      "time",
+      "timeEnd",
+      "trace"
+    ],
+    "no-consecutive-blank-lines": [true, 2],
+    "no-duplicate-imports": true,
+    "no-duplicate-variable": true,
+    "no-duplicate-switch-case": true,
+    "no-dynamic-delete": true,
+    "no-floating-promises": false,
+    "no-for-in-array": true,
+    "no-inferred-empty-object-type": true,
+    "no-inferrable-types": [true, "ignore-params"],
+    "no-invalid-template-strings": true,
+    "no-invalid-this": true,
+    "no-implicit-dependencies": [true, "dev" ,[
+        "~src",
+        "~app",
+        "~testing"
+      ]
+    ],
+    "no-magic-numbers": true,
+    "no-null-keyword": false,
+    "no-object-literal-type-assertion": true,
+    "no-output-rename": false,
+    "no-return-await": true,
+    "no-sparse-arrays": true,
+    "no-string-literal": false,
+    "no-this-assignment": true,
+    "no-unnecessary-type-assertion": true,
+    "max-file-line-count": [true, 400],
+    "object-literal-key-quotes": [true, "as-needed"],
+    "object-literal-sort-keys": false,
+    "one-line": [
+      true,
+      "check-open-brace",
+      "check-catch",
+      "check-else",
+      "check-whitespace"
+    ],
+    "only-arrow-functions": [true, "allow-named-functions"],
+    "ordered-imports": false,
+    "prefer-conditional-expression": true,
+    "prefer-object-spread": true,
+    "prefer-readonly": false,
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "restrict-plus-operands": false,
+    "strict-boolean-expressions": false,
+    "switch-default": false,
+    "trailing-comma": [
+      true,
+      {
+        "multiline": {
+          "objects": "always",
+          "arrays": "always",
+          "functions": "ignore",
+          "typeLiterals": "ignore"
+        },
+        "singleline": "never",
+        "esSpecCompliant": true
+      }
+    ],
+    "triple-equals": true,
+    "typedef": [
+       true,
+       "parameter",
+       "array-destructuring"
+    ],
+    "variable-name": false,
+    "use-isnan": true
+  }
+}
