@@ -1,5 +1,5 @@
 import * as fromProcess from '../src/process';
-import { npmBumpPatchVersion } from '../src/npm';
+import { npmBumpPatchVersion, npmPack } from '../src/npm';
 
 describe('npm', () => {
   let execFileAsyncSpy: jest.SpyInstance;
@@ -48,4 +48,28 @@ describe('npm', () => {
       return expect(outputPromise).rejects.toBe(error);
     });
   }); // describe npmBumpPatchVersion
+
+  describe('npmPack', () => {
+    it('should call execFileAsync', async () => {
+      // arrange
+      const sourceDir = 'dest/lib1';
+      const targetDir = 'tmp/abc123';
+      const expectedTarballName = 'lib1-0.0.33.tgz';
+
+      execFileAsyncSpy = jest.spyOn(fromProcess, 'execFileAsync')
+        .mockImplementation(_ => Promise.resolve({ stdout: `\n${expectedTarballName}\n` }) as fromProcess.ExecFileAsyncReturnType);
+
+      // act
+      const version = await npmPack(sourceDir, targetDir);
+
+      // assert
+      expect(npmPack(sourceDir, targetDir)).resolves.toBe(expectedTarballName);
+      expect(execFileAsyncSpy).toHaveBeenCalledWith('npm', ['pack', sourceDir], expect.objectContaining({
+        cwd: targetDir,
+        env: expect.anything(),
+      }));
+
+      expect(version).toBe('lib1-0.0.33.tgz');
+    });
+  }); // describe npmPack
 }); // describe npm

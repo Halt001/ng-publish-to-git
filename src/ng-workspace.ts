@@ -1,12 +1,12 @@
 import { readFileSync } from 'fs';
+// tslint:disable-next-line: no-var-requires
 const path = require('path');
-
 
 
 export type ProjectType = 'library'|'application';
 
 export interface ProjectInfo {
-  name: string;
+  projectName: string;
   projectType: ProjectType;
   root: string;
   dest: string;
@@ -39,13 +39,14 @@ export interface NGAppProject {
   };
 }
 
-export interface  NGPackage {
+export interface NGPackage {
   dest: string;
 }
 
 export interface NgPublishToGitPackageInfo {
   name: string;
   publish: boolean;
+  repositoryUrl?: string;
 }
 
 export interface PackageInfo {
@@ -84,15 +85,16 @@ export function ngGetProjects(): ProjectInfo[] {
 
       const packagePublishInfo = ngPublishToGitInfo.packages.find(info => info.name === projectName);
       const publish = !!packagePublishInfo && packagePublishInfo.publish;
+      const repositoryUrl = !!packagePublishInfo && packagePublishInfo.repositoryUrl;
 
       const projectInfo: ProjectInfo = {
-        name: projectName,
+        projectName: projectName,
         projectType: ngProject.projectType,
         root: undefined,
         dest: undefined,
         version: undefined,
         publish: undefined,
-        repositoryUrl: undefined,
+        repositoryUrl,
       };
 
       switch (projectInfo.projectType) {
@@ -104,9 +106,6 @@ export function ngGetProjects(): ProjectInfo[] {
           projectInfo.root = ngLibProject.root;
           projectInfo.dest = ngGetDestinationFromLibProject(projectName, ngLibProject);
           projectInfo.version = ngPackageInfo.version;
-          if (ngPackageInfo.repository) {
-            projectInfo.repositoryUrl = ngPackageInfo.repository.url;
-          }
           projectInfo.publish = publish;
           break;
         }
@@ -119,9 +118,7 @@ export function ngGetProjects(): ProjectInfo[] {
           projectInfo.root = ngAppProject.root;
           projectInfo.dest = ngAppProject.architect.build.options.outputPath;
           projectInfo.version = ngPackageInfo.version;
-          if (ngPackageInfo.repository) {
-            projectInfo.repositoryUrl = ngPackageInfo.repository.url;
-          }
+
           projectInfo.publish = publish;
           break;
         }

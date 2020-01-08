@@ -93,7 +93,8 @@ describe('ng-workspace', () => {
             "packages": [
               {
                 "name": "lib1",
-                "publish": true
+                "publish": true,
+                "repositoryUrl": "https://some-repo.git"
               },
               {
                 "name": "app",
@@ -113,19 +114,19 @@ describe('ng-workspace', () => {
 
       // assert
       expect(projects.length).toEqual(3);
-      expect(projects[0].name).toBe('lib1');
+      expect(projects[0].projectName).toBe('lib1');
       expect(projects[0].projectType).toBe('library');
       expect(projects[0].root).toBe('projects/lib1');
       expect(projects[0].dest).toBe('dist/lib1');
       expect(projects[0].version).toBe('2.3.4');
 
-      expect(projects[1].name).toBe('lib2');
+      expect(projects[1].projectName).toBe('lib2');
       expect(projects[1].projectType).toBe('library');
       expect(projects[1].root).toBe('projects/lib2');
       expect(projects[1].dest).toBe('dist/lib2');
       expect(projects[1].version).toBe('3.4.5');
 
-      expect(projects[2].name).toBe('app');
+      expect(projects[2].projectName).toBe('app');
       expect(projects[2].projectType).toBe('application');
       expect(projects[2].root).toBe('projects/app');
       expect(projects[2].dest).toBe('dist/app');
@@ -647,6 +648,7 @@ describe('ngGetAppProjectPackageInfo', () => {
           {
             name: 'lib1',
             publish: true,
+            repositoryUrl: 'https://some-repo.git',
           },
           {
             name: 'app',

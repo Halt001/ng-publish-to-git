@@ -1,22 +1,58 @@
 #!/usr/bin/env node
-import { ngGetProjects } from './ng-workspace';
-import { git } from './git';
-import { ngProjectGetPublishTags, ngProjectHasChangesSinceTag, workingDirIsClean } from './ng-publish';
-import { npmBumpPatchVersion } from './npm';
+import { ngGetProjects, ProjectInfo } from './ng-workspace';
+import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
+import chalk from 'chalk';
 
-// // tslint:disable-next-line: no-console
-// console.log('Hello from ng-publish-git via link2');
-// const projects = ngGetProjects();
 
-// // tslint:disable-next-line: no-console
-// projects.forEach(project => console.log(project));
+const longestProjectNameLength = (projects: ProjectInfo[]): number => {
+  return projects.reduce((maxLen, projectInfo) => Math.max(maxLen, projectInfo.projectName.length), 0);
+};
 
-// // tslint:disable-next-line: no-console
-// git(['init'], '/Users/tim/Downloads/gittest')
-//   .then(output => console.log('Output: ', output))
-//   // tslint:disable-next-line: no-console
-//   .catch(err => console.log('Error:', err));
+const logResult = (publishResult: PublishResult, maxNameLen: number) => {
+  const { projectName, version, newVersion, publishState } = publishResult;
+  const formattedProjectName = projectName.padEnd(maxNameLen, ' ');
 
-// npmBumpPatchVersion('./tmp').then((version: string) => console.log(`NewVer:[${version}]`));
+  let msg = chalk.blue(formattedProjectName + ': ');
+  switch (publishState) {
+    case PublishState.NotPublishedDisabled:
+      msg += chalk.dim('publish disabled');
+      break;
 
-workingDirIsClean().then((isClean: boolean) => console.log(`isClean:[${isClean}]`));
+    case PublishState.NotPublishedNoChange:
+      msg += 'No changes found, not published';
+      break;
+
+    case PublishState.PublishedCurrentVersion:
+      msg += `Published with version: ${chalk.green('v' + version)}`;
+      break;
+
+    case PublishState.PublishedVersionBumped:
+        msg += `Published with version bumped: ${chalk.green('v' + version + ' -> ' + 'v' + newVersion)}`;
+        break;
+
+    default:
+      msg += '?';
+      break;
+  }
+
+  // tslint:disable-next-line: no-console
+  console.log(msg);
+};
+
+// mechanism to prevent NodeJs from exiting before the result promise is resolved
+const timeOut = 1800000; /* 30 minutes in ms */
+const keepNodeAliveTimer: NodeJS.Timeout = setTimeout(() => keepNodeAliveTimer.unref(), timeOut);
+const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
+
+(async () => {
+  const projects = ngGetProjects();
+  const results = await ngPublishAllIfChanged(projects);
+  const maxNameLen = longestProjectNameLength(projects);
+
+  // tslint:disable-next-line: no-console
+  console.log();
+  results.map(result => logResult(result, maxNameLen));
+  // tslint:disable-next-line: no-console
+  console.log();
+  stopWaitingAndExit();
+})();

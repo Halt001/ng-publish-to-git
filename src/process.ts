@@ -1,7 +1,7 @@
 // import { Promise, promisify } from 'bluebird';
 import { execFile, spawn, SpawnOptions, ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
-
+import chalk from 'chalk';
 
 export interface ExecProcessOptions {
   cwd?: string;
@@ -12,8 +12,12 @@ export interface ExecProcessOptions {
 export const execFileAsync = promisify(execFile);
 export type ExecFileAsyncReturnType = ReturnType<typeof execFileAsync>;
 
-
 export function execProcess(processName: string, args: string[] = [], options: ExecProcessOptions = {}): Promise<string> {
+  const consoleOutput = chalk.dim('Executing: ') + processName + ' ' + args.join(' ') + chalk.dim(' with cwd: ') + (options.cwd || '.');
+
+  // tslint:disable-next-line: no-console
+  console.log(consoleOutput);
+
   return options && options.verbose
     ? execProcessVerbose(processName, args, options)
     : execProcessSilent(processName, args, options);
