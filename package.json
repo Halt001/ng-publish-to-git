@@ -1,6 +1,6 @@
 {
   "name": "ng-publish-to-git",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "A helper package for publishing one or more Angular libraries to a Git repo instead of the NPM registry",
   "bin": "lib/index.js",
   "scripts": {
@@ -28,8 +28,6 @@
   },
   "homepage": "https://github.com/Halt001/ng-publish-to-git#readme",
   "dependencies": {
-    "@types/async": "^3.0.3",
-    "@types/tar": "^4.0.3",
     "async": "^3.1.0",
     "chalk": "^3.0.0",
     "tar": "^5.0.5",
@@ -39,6 +37,8 @@
     "@types/jest": "^24.0.24",
     "@types/node": "^12.12.22",
     "@types/tmp": "^0.1.0",
+    "@types/tar": "^4.0.3",
+    "@types/async": "^3.0.3",
     "concurrently": "^5.0.2",
     "jest": "^24.9.0",
     "ts-jest": "^24.2.0",
