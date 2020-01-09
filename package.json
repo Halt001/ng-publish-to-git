@@ -1,6 +1,6 @@
 {
   "name": "ng-publish-to-git",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A helper package for publishing one or more Angular libraries to a Git repo instead of the NPM registry",
   "bin": "lib/index.js",
   "scripts": {

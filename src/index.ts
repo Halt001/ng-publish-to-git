@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { ngGetProjects, ProjectInfo } from './ng-workspace';
-import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
 import chalk from 'chalk';
 
+import { ngGetProjects, ProjectInfo } from './ng-workspace';
+import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
 
 const longestProjectNameLength = (projects: ProjectInfo[]): number => {
   return projects.reduce((maxLen, projectInfo) => Math.max(maxLen, projectInfo.projectName.length), 0);
@@ -45,14 +45,19 @@ const keepNodeAliveTimer: NodeJS.Timeout = setTimeout(() => keepNodeAliveTimer.u
 const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
 
 (async () => {
-  const projects = ngGetProjects();
-  const results = await ngPublishAllIfChanged(projects);
-  const maxNameLen = longestProjectNameLength(projects);
+  try {
+    const projects = ngGetProjects();
+    const results = await ngPublishAllIfChanged(projects);
+    const maxNameLen = longestProjectNameLength(projects);
 
-  // tslint:disable-next-line: no-console
-  console.log();
-  results.map(result => logResult(result, maxNameLen));
-  // tslint:disable-next-line: no-console
-  console.log();
-  stopWaitingAndExit();
+    // tslint:disable-next-line: no-console
+    console.log();
+    results.map(result => logResult(result, maxNameLen));
+    // tslint:disable-next-line: no-console
+    console.log();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    stopWaitingAndExit();
+  }
 })();

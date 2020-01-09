@@ -13,6 +13,7 @@ import * as fromProcess from '../src/process';
 
 // tslint:disable-next-line: no-duplicate-imports
 import * as fromNgPublish from '../src/ng-publish';
+// tslint:disable-next-line: no-duplicate-imports
 import { PublishResult, PublishState } from '../src/ng-publish';
 
 function semVerIncreasePatch(version: string): string {
@@ -373,14 +374,21 @@ describe('ng-publish', () => {
 
   describe('ngBuildProject', () => {
     let execProcessSpy: jest.SpyInstance;
+    let originalPlatform: string;
 
     beforeEach(() => {
       execProcessSpy = jest.spyOn(fromProcess, 'execProcess')
         .mockImplementation(_ => Promise.resolve('mocked-output'));
+
+      originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', {
+        value: 'not-windows',
+      });
     });
 
     afterEach(() => {
       execProcessSpy.mockRestore();
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
     });
 
     it('should call ng build with the project name', async () => {
@@ -390,6 +398,17 @@ describe('ng-publish', () => {
       // assert
       await expect(ngBuildProject(projectName)).resolves.toBeUndefined();
       expect(execProcessSpy).toHaveBeenCalledWith('ng', ['build', projectName], { verbose: false });
+    });
+
+    it('should call ng build using ng.cmd on windows with the project name', async () => {
+      // arrange
+      const projectName = 'lib1';
+
+      Object.defineProperty(process, 'platform', { value: 'win32', });
+
+      // assert
+      await expect(ngBuildProject(projectName)).resolves.toBeUndefined();
+      expect(execProcessSpy).toHaveBeenCalledWith('ng.cmd', ['build', projectName], { verbose: false });
     });
   }); // describe ngBuildProject'
 
@@ -449,7 +468,7 @@ describe('ng-publish', () => {
       expect(splitProjectTag('lib1@v1.0')).toBeNull();
       expect(splitProjectTag('')).toBeNull();
     });
-  }); // splitProjectTag
+  }); // describe splitProjectTag
 
   describe('ngProjectHasChangesSinceTag', () => {
     it ('should return true when there are changed files', async () => {

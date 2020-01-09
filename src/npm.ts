@@ -1,16 +1,20 @@
-import { execProcess } from './process';
+import { execProcess, isWindowsPlatform } from './process';
 
+
+function npmProcessName(): string {
+  return isWindowsPlatform()
+    ? 'npm.cmd'
+    : 'npm';
+}
 
 export async function npmBumpPatchVersion(cwd: string): Promise<string> {
-  const npmOutput = await execProcess('npm', ['version', 'patch'], { cwd });
+  const npmOutput = await execProcess(npmProcessName(), ['version', 'patch'], { cwd });
 
   return npmOutput.trim().substring(1); // also remove the v in v1.0.0git status --porcelain
 }
 
 export async function npmPack(sourceDir: string, targetDir: string): Promise<string> {
-  console.log('npmPack params', sourceDir, targetDir);
-
-  const npmOutput = await execProcess('npm', ['pack', sourceDir], { cwd: targetDir });
+  const npmOutput = await execProcess(npmProcessName(), ['pack', sourceDir], { cwd: targetDir });
 
   return npmOutput.trim();
 }

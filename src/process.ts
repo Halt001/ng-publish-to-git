@@ -65,3 +65,7 @@ function execProcessVerbose(processName: string, args: string[], options: ExecPr
       .stdout.on('data', onStdoutDataFn);
   });
 }
+
+export function isWindowsPlatform() {
+  return process.platform === 'win32';
+}

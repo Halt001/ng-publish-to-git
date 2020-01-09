@@ -13,7 +13,7 @@ import { git } from './git';
 // this makes adding spies in the unit test possible
 import * as thisModule from './ng-publish';
 import { npmBumpPatchVersion, npmPack } from './npm';
-import { execProcess } from './process';
+import { execProcess, isWindowsPlatform } from './process';
 
 export enum PublishState {
   NotPublishedDisabled = 0,
@@ -29,9 +29,8 @@ export interface PublishResult {
   publishState: PublishState;
 }
 
-
-
 tmp.setGracefulCleanup();
+
 export const dirAsync = promisify(tmp.dir as (options: DirOptions, cb: DirCallback) => void);
 export const unlinkAsync = promisify(fs.unlink);
 
@@ -215,5 +214,9 @@ export function splitProjectTag(tag: string): { projectName: string, version: st
 }
 
 export async function ngBuildProject(projectName: string): Promise<void> {
-  await execProcess('ng', ['build', projectName], { verbose: false });
+  const ngProcessName = isWindowsPlatform()
+    ? 'ng.cmd'
+    : 'ng';
+
+  await execProcess(ngProcessName, ['build', projectName], { verbose: false });
 }

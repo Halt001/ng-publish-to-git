@@ -3,18 +3,23 @@ import { npmBumpPatchVersion, npmPack } from '../src/npm';
 
 describe('npm', () => {
   let execFileAsyncSpy: jest.SpyInstance;
+  let originalPlatform: string;
 
   beforeEach(() => {
     execFileAsyncSpy = jest.spyOn(fromProcess, 'execFileAsync')
       .mockImplementation(_ => Promise.resolve({ stdout: 'mocked-output' }) as fromProcess.ExecFileAsyncReturnType);
+
+    originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'not-windows' });
   });
 
   afterEach(() => {
     execFileAsyncSpy.mockRestore();
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
   describe('npmBumpPatchVersion', () => {
-    it('should call execFileAsync', async () => {
+    it('should call execFileAsync with npm on Unix platforms', async () => {
       // arrange
       const cwd = 'dest/lib1';
 
@@ -26,6 +31,27 @@ describe('npm', () => {
 
       // assert
       expect(execFileAsyncSpy).toHaveBeenCalledWith('npm', ['version', 'patch'], expect.objectContaining({
+        cwd,
+        env: expect.anything(),
+      }));
+
+      expect(version).toBe('1.2.3');
+    });
+
+    it('should call execFileAsync with npm.cmd on Windows platforms', async () => {
+      // arrange
+      const cwd = 'dest/lib1';
+
+      execFileAsyncSpy = jest.spyOn(fromProcess, 'execFileAsync')
+        .mockImplementation(_ => Promise.resolve({ stdout: 'v1.2.3\n' }) as fromProcess.ExecFileAsyncReturnType);
+
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+
+      // act
+      const version = await npmBumpPatchVersion(cwd);
+
+      // assert
+      expect(execFileAsyncSpy).toHaveBeenCalledWith('npm.cmd', ['version', 'patch'], expect.objectContaining({
         cwd,
         env: expect.anything(),
       }));
