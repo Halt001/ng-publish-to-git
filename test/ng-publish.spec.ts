@@ -136,7 +136,7 @@ describe('ng-publish', () => {
         .mockImplementation(() => Promise.resolve(false));
 
       // assert
-      await expect(ngPublishIfChanged(lib1Project)).rejects.toThrow('Working directory is not clean');
+      await expect(ngPublishIfChanged(lib1Project)).rejects.toThrow('You have uncommited changes, please commit or remove your changes first');
       expect(ngPublishSpy).not.toHaveBeenCalled();
     });
 

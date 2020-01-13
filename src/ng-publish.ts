@@ -52,7 +52,7 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
   }
 
   if (!await thisModule.workingDirIsClean()) {
-    return Promise.reject(new Error(`Working directory is not clean`));
+    return Promise.reject(new Error(`You have uncommited changes, please commit or remove your changes first`));
   }
 
   const { projectName, version } = projectInfo;
