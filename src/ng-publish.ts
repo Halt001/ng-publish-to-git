@@ -7,8 +7,10 @@ import fs from 'fs';
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
 
+import { commandLineArgs } from './argv';
 import { ProjectInfo } from './ng-workspace';
 import { git } from './git';
+
 
 // this makes adding spies in the unit test possible
 import * as thisModule from './ng-publish';
@@ -29,7 +31,9 @@ export interface PublishResult {
   publishState: PublishState;
 }
 
-tmp.setGracefulCleanup();
+if (!commandLineArgs.debug) {
+  tmp.setGracefulCleanup();
+}
 
 export const dirAsync = promisify(tmp.dir as (options: DirOptions, cb: DirCallback) => void);
 export const unlinkAsync = promisify(fs.unlink);
@@ -52,10 +56,10 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
   }
 
   if (!await thisModule.workingDirIsClean()) {
-    return Promise.reject(new Error(`You have uncommited changes, please commit or remove your changes first`));
+    return Promise.reject(new Error(`You have uncommitted changes, please commit or remove your changes first`));
   }
 
-  const { projectName, version } = projectInfo;
+  const { projectName, version, commitPrefix } = projectInfo;
 
   const publishResult: PublishResult = {
     projectName,
@@ -85,7 +89,7 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
   if (hasChanges) {
     const newVersion = await npmBumpPatchVersion(projectInfo.root);
     const commitMessage = `ng-publish-to-git updated ${projectInfo.projectName} to version v${newVersion}`;
-    await thisModule.stageAllAndCommit(commitMessage);
+    await thisModule.stageAllAndCommit(commitPrefix, commitMessage);
 
     await thisModule.ngPublish({ ...projectInfo, version: newVersion });
     publishResult.publishState = PublishState.PublishedVersionBumped;
@@ -96,7 +100,7 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
 }
 
 export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
-  const { projectName, version, repositoryUrl, dest } = projectInfo;
+  const { projectName, version, repositoryUrl, dest, commitPrefix } = projectInfo;
 
   await thisModule.ngBuildProject(projectName);
   await thisModule.tagProjectVersion(projectName, version);
@@ -104,7 +108,7 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
 
   const tmpRepoDir = await createTmpRepo(repositoryUrl);
   await thisModule.packIntoTmpRepo(dest, tmpRepoDir);
-  const tag = await thisModule.commitAndTagTmpRepo(projectName, version, tmpRepoDir);
+  const tag = await thisModule.commitAndTagTmpRepo(projectName, version, commitPrefix, tmpRepoDir);
   await thisModule.pushTmpRepo(repositoryUrl, tag, tmpRepoDir);
 }
 
@@ -113,20 +117,21 @@ export async function workingDirIsClean(): Promise<boolean> {
 }
 
 export async function createTmpRepo(packageRepositoryUrl: string): Promise<string> {
-  const tmpRepoDir = await thisModule.dirAsync({ unsafeCleanup : false, prefix: 'tmp_ng-publish-to-git_' });
+  const tmpRepoDir = await thisModule.dirAsync({ unsafeCleanup: true, prefix: 'tmp_ng-publish-to-git_' });
   await git(['init'], tmpRepoDir);
   await git(['remote', 'add', 'package-repo', packageRepositoryUrl], tmpRepoDir);
 
   return tmpRepoDir;
 }
 
-export async function commitAndTagTmpRepo(projectName: string, version: string, repoDir: string): Promise<string> {
-  const message = `Published ${projectName}@v${version} with ng-publish-to-git`;
+export async function commitAndTagTmpRepo(projectName: string, version: string, commitPrefix: string, repoDir: string): Promise<string> {
   const tag = 'v' + version;
+  const tagMessage = `Published ${projectName}@${tag} with ng-publish-to-git`;
+  const commitMessage = prefixCommitMessage(commitPrefix, tagMessage);
 
   await git(['add', '.'], repoDir);
-  await git(['commit', '-m', message], repoDir);
-  await git(['tag', 'v' + version, '-m', message], repoDir);
+  await git(['commit', '-m', commitMessage], repoDir);
+  await git(['tag', 'v' + version, '-m', tagMessage], repoDir);
 
   return tag;
 }
@@ -155,17 +160,18 @@ export async function pushTmpRepo(packageRepositoryUrl: string, tag: string, rep
   await git(['push', packageRepositoryUrl, tag], repoDir);
 }
 
-export async function commit(commitMessage: string): Promise<void> {
-  await git(['commit', '-m', commitMessage]);
+export async function commit(commitPrefix: string, commitMessage: string): Promise<void> {
+  const message = prefixCommitMessage(commitPrefix, commitMessage);
+  await git(['commit', '-m', message]);
 }
 
 export async function stageFiles(pathSpec: string): Promise<void> {
   await git(['add', pathSpec]);
 }
 
-export async function stageAllAndCommit(commitMessage: string): Promise<void> {
+export async function stageAllAndCommit(commitPrefix: string, commitMessage: string): Promise<void> {
   await thisModule.stageFiles('.');
-  await thisModule.commit(commitMessage);
+  await thisModule.commit(commitPrefix, commitMessage);
 }
 
 export async function tagProjectVersion(projectName: string, version: string): Promise<void> {
@@ -207,9 +213,9 @@ export function splitProjectTag(tag: string): { projectName: string, version: st
 
   return groups
     ? {
-        projectName: groups[indexName],
-        version: groups[indexVersion],
-      }
+      projectName: groups[indexName],
+      version: groups[indexVersion],
+    }
     : null;
 }
 
@@ -219,4 +225,10 @@ export async function ngBuildProject(projectName: string): Promise<void> {
     : 'ng';
 
   await execProcess(ngProcessName, ['build', projectName], { verbose: false });
+}
+
+function prefixCommitMessage(commitPrefix: string, message: string): string {
+  return commitPrefix
+    ? commitPrefix + ' ' + message
+    : message;
 }

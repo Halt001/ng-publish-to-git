@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { commandLineArgs } from './argv';
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
 
@@ -13,6 +14,7 @@ export interface ProjectInfo {
   version: string;
   repositoryUrl: string;
   publish: boolean;
+  commitPrefix: string;
 }
 
 export interface NGLibProject {
@@ -43,10 +45,16 @@ export interface NGPackage {
   dest: string;
 }
 
-export interface NgPublishToGitPackageInfo {
+export interface NgPublishToGitPackageConfig {
   name: string;
   publish: boolean;
   repositoryUrl?: string;
+  commitPrefix?: string;
+}
+
+export interface NgPublishToGitConfig {
+  commitPrefix?: string;
+  packages: NgPublishToGitPackageConfig[];
 }
 
 export interface PackageInfo {
@@ -55,9 +63,7 @@ export interface PackageInfo {
     type: string;
     url: string;
   };
-  'ng-publish-to-git'?: {
-    packages: NgPublishToGitPackageInfo[];
-  };
+  'ng-publish-to-git'?: NgPublishToGitConfig;
 }
 
 export function ngGetProjects(): ProjectInfo[] {
@@ -69,8 +75,8 @@ export function ngGetProjects(): ProjectInfo[] {
     return [];
   }
 
-  const ngPublishToGitInfo = ngGetAppProjectPackageInfo('root')['ng-publish-to-git'];
-  if (!ngPublishToGitInfo || !ngPublishToGitInfo.packages.length) {
+  const ngPublishToGitConfig: NgPublishToGitConfig = ngGetAppProjectPackageInfo('root')['ng-publish-to-git'];
+  if (!ngPublishToGitConfig || !ngPublishToGitConfig.packages.length) {
     console.warn('No packages configured for publish. Add packages under "ng-publish-to-git" key to package.json');
 
     return [];
@@ -83,18 +89,20 @@ export function ngGetProjects(): ProjectInfo[] {
       const ngProject: NGLibProject | NGAppProject = angularWorkspace.projects[projectName];
       throwOnInvalidProject(projectName, ngProject);
 
-      const packagePublishInfo = ngPublishToGitInfo.packages.find(info => info.name === projectName);
+      const packagePublishInfo = ngPublishToGitConfig.packages.find(info => info.name === projectName);
       const publish = !!packagePublishInfo && packagePublishInfo.publish;
       const repositoryUrl = !!packagePublishInfo && packagePublishInfo.repositoryUrl;
+      const commitPrefix = determineCommitPrefix(commandLineArgs.commitPrefix, ngPublishToGitConfig, projectName);
 
       const projectInfo: ProjectInfo = {
-        projectName: projectName,
+        projectName,
         projectType: ngProject.projectType,
         root: undefined,
         dest: undefined,
         version: undefined,
         publish: undefined,
         repositoryUrl,
+        commitPrefix,
       };
 
       switch (projectInfo.projectType) {
@@ -136,6 +144,36 @@ export function ngGetProjects(): ProjectInfo[] {
   }
 
   return projects;
+}
+
+export function determineCommitPrefix(
+  commandLineCommitPrefix: string,
+  ngPublishToGitConfig: NgPublishToGitConfig,
+  projectName: string,
+): string {
+  let commitPrefix = commandLineCommitPrefix;
+  if (commitPrefix !== undefined && commitPrefix !== null) {
+    return commitPrefix;
+  }
+
+  if (ngPublishToGitConfig) {
+    if (ngPublishToGitConfig.packages && ngPublishToGitConfig.packages.length) {
+      const ngPublishToGitPackageConfig: NgPublishToGitPackageConfig =
+        ngPublishToGitConfig.packages.find(packageConfig => packageConfig.name === projectName);
+
+      commitPrefix = ngPublishToGitPackageConfig && ngPublishToGitPackageConfig.commitPrefix;
+      if (commitPrefix !== undefined && commitPrefix !== null) {
+        return commitPrefix;
+      }
+    }
+
+    commitPrefix = ngPublishToGitConfig.commitPrefix;
+    if (commitPrefix !== undefined && commitPrefix !== null) {
+      return commitPrefix;
+    }
+  }
+
+  return '';
 }
 
 export function SafeJsonParse(s: string): any {

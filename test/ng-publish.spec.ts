@@ -1,4 +1,5 @@
 // tslint:disable: no-magic-numbers max-file-line-count
+// tslint:disable-next-line: no-var-requires
 const path = require('path');
 import tar from 'tar';
 
@@ -41,6 +42,7 @@ describe('ng-publish', () => {
     version: '1.0.0',
     publish: true,
     repositoryUrl: 'ssh://git@some-repo/lib1.git',
+    commitPrefix: 'XYZ-LIB1',
   };
 
   const lib2Project: ProjectInfo = {
@@ -51,6 +53,7 @@ describe('ng-publish', () => {
     version: '2.0.0',
     publish: true,
     repositoryUrl: 'ssh://git@some-repo/lib2.git',
+    commitPrefix: 'XYZ-LIB2',
   };
 
   beforeEach(() => {
@@ -136,7 +139,7 @@ describe('ng-publish', () => {
         .mockImplementation(() => Promise.resolve(false));
 
       // assert
-      await expect(ngPublishIfChanged(lib1Project)).rejects.toThrow('You have uncommited changes, please commit or remove your changes first');
+      await expect(ngPublishIfChanged(lib1Project)).rejects.toThrow('You have uncommitted changes, please commit or remove your changes first');
       expect(ngPublishSpy).not.toHaveBeenCalled();
     });
 
@@ -177,7 +180,7 @@ describe('ng-publish', () => {
       expect(ngProjectHasChangesSinceTagSpy).toHaveBeenCalledWith(lib1Project, makeProjectTag(lib1Project.projectName, version));
       expect(npmBumpPatchVersionSpy).toHaveBeenCalledWith(lib1Project.root);
       expect(ngPublishSpy).toHaveBeenCalledWith(projectInfoAfterBump);
-      expect(stageAllAndCommitSpy).toHaveBeenCalledWith(expectedCommitMessage);
+      expect(stageAllAndCommitSpy).toHaveBeenCalledWith(lib1Project.commitPrefix, expectedCommitMessage);
     });
   }); // ngPublishIfChanged
 
@@ -293,13 +296,26 @@ describe('ng-publish', () => {
   }); // describe workingDirIsClean
 
   describe('commit', () => {
-    it('should call git commit with message', async () => {
+    it('should call git commit with message with prefix', async () => {
       // arrange
       const commitMessage = 'WIP';
+      const commitPrefix = 'XYZ-123';
+      const expectedCommitMessage = commitPrefix + ' ' + commitMessage;
       mockGitResponse = '\n3 files changed, 26 insertions(+), 4 deletions(-)\n';
 
       // assert
-      await expect(commit(commitMessage)).resolves.toBeUndefined();
+      await expect(commit(commitPrefix, commitMessage)).resolves.toBeUndefined();
+      expect(gitSpy).toBeCalledWith(['commit', '-m', expectedCommitMessage]);
+    });
+
+    it('should call git commit with message without prefix', async () => {
+      // arrange
+      const commitMessage = 'WIP';
+      const commitPrefix: string = undefined;
+      mockGitResponse = '\n3 files changed, 26 insertions(+), 4 deletions(-)\n';
+
+      // assert
+      await expect(commit(commitPrefix, commitMessage)).resolves.toBeUndefined();
       expect(gitSpy).toBeCalledWith(['commit', '-m', commitMessage]);
     });
   }); // describe commit
@@ -340,12 +356,25 @@ describe('ng-publish', () => {
   }); // describe stageFiles
 
   describe('stageAllAndCommit', () => {
-    it('should call git add fileSpec', async () => {
+    it(`should call 'git add' and 'git commit' with commit prefix`, async () => {
       // arrange
       const commitMessage = 'WIP';
+      const commitPrefix = 'XYZ-123';
+      const expectedCommitMessage = commitPrefix + ' ' + commitMessage;
 
       // assert
-      await expect(stageAllAndCommit(commitMessage)).resolves.toBeUndefined();
+      await expect(stageAllAndCommit(commitPrefix, commitMessage)).resolves.toBeUndefined();
+      expect(gitSpy).toHaveBeenNthCalledWith(1, ['add', '.']);
+      expect(gitSpy).toHaveBeenNthCalledWith(2, ['commit', '-m', expectedCommitMessage]);
+    });
+
+    it(`should call 'git add' and 'git commit' without commit prefix`, async () => {
+      // arrange
+      const commitMessage = 'WIP';
+      const commitPrefix: string = undefined;
+
+      // assert
+      await expect(stageAllAndCommit(commitPrefix, commitMessage)).resolves.toBeUndefined();
       expect(gitSpy).toHaveBeenNthCalledWith(1, ['add', '.']);
       expect(gitSpy).toHaveBeenNthCalledWith(2, ['commit', '-m', commitMessage]);
     });
@@ -404,7 +433,7 @@ describe('ng-publish', () => {
       // arrange
       const projectName = 'lib1';
 
-      Object.defineProperty(process, 'platform', { value: 'win32', });
+      Object.defineProperty(process, 'platform', { value: 'win32' });
 
       // assert
       await expect(ngBuildProject(projectName)).resolves.toBeUndefined();

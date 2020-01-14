@@ -6,9 +6,11 @@ For now just know that you need to add the **ng-publish-to-git** key to the main
 
 ```
 "ng-publish-to-git": {
+  "commitPrefix": "GLOBAL-PREFIX",
   "packages": [
     {
       "name": "lib1",
+      "commitPrefix": "LIB1-SPECIFIC-PREFIX",
       "publish": true,
       "repositoryUrl": "https://some-repo-for-lib1-packages.git"
     },

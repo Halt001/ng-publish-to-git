@@ -1,10 +1,12 @@
 // tslint:disable: no-magic-numbers max-file-line-count
+import fs from 'fs';
 
 import { ngGetDestinationFromProjectFile, NGLibProject, NGAppProject,
   ngGetDestinationFromLibProject, ngGetProjectFileNameFromLibProject,
   ngGetProjects, SafeJsonParse, throwOnInvalidLibProject, throwOnInvalidAppProject, throwOnInvalidAngularProjectSettings,
-  NGPackage, PackageInfo, throwOnInvalidPackageInfo, ngGetLibProjectPackageInfo, ngGetAppProjectPackageInfo } from '../src/ng-workspace';
-import fs from 'fs';
+  NGPackage, PackageInfo, throwOnInvalidPackageInfo, ngGetLibProjectPackageInfo, ngGetAppProjectPackageInfo,
+  determineCommitPrefix, NgPublishToGitConfig, NgPublishToGitPackageConfig  } from '../src/ng-workspace';
+
 
 jest.mock('fs');
 
@@ -132,7 +134,7 @@ describe('ng-workspace', () => {
       expect(projects[2].dest).toBe('dist/app');
       expect(projects[2].version).toBe('1.2.3');
     });
-  });
+  }); // describe ngGetProjects
 
   describe('SafeJsonParse', () => {
     it ('should parse a valid JSON string', () => {
@@ -142,7 +144,7 @@ describe('ng-workspace', () => {
     it ('should return null for an invalid JSON string', () => {
       expect(SafeJsonParse('')).toBeNull();
     });
-  });
+  }); // describe SafeJsonParse
 
   describe('throwOnInvalidLibProject', () => {
     it('should not throw on a valid lib project', () => {
@@ -272,7 +274,7 @@ describe('ng-workspace', () => {
 
       expect(() => throwOnInvalidLibProject('lib1', ngLibProject)).toThrow();
     });
-  });
+  }); // describe throwOnInvalidLibProject
 
   describe('throwOnInvalidAppProject', () => {
     it('should not throw on a valid app project', () => {
@@ -403,7 +405,7 @@ describe('ng-workspace', () => {
        // assert
       expect(() => throwOnInvalidAppProject('app', ngAppProject)).toThrow();
     });
-  });
+  }); // describe throwOnInvalidAppProject
 
   describe('throwOnInvalidAngularProjectSettings', () => {
     it ('should not throw on valid angular project settings', () => {
@@ -423,7 +425,7 @@ describe('ng-workspace', () => {
       // assert
       expect(() => throwOnInvalidAngularProjectSettings('lib1', angularProjectSettings)).toThrow();
     });
-  });
+  }); // describe throwOnInvalidAngularProjectSettings
 
   describe('throwOnInvalidPackageInfo', () => {
     it ('should not throw on valid package info without repository settings', () => {
@@ -557,7 +559,7 @@ describe('ng-workspace', () => {
       // assert
       expect(() => throwOnInvalidPackageInfo('app', packageInfo)).toThrow();
     });
-  });
+  }); // describe throwOnInvalidPackageInfo
 
   describe('ngGetProjectFileNameFromLibProject', () => {
     it('should return the project filename of a valid library project', () => {
@@ -577,14 +579,14 @@ describe('ng-workspace', () => {
 
       expect(projectFilename).toEqual('projects/lib1/ng-package.json');
     });
-  });
+  }); // describe ngGetProjectFileNameFromLibProject
 
   describe('ngGetDestinationFromProjectFile', () => {
     it('should return the destination', () => {
       const dest = ngGetDestinationFromProjectFile('lib1', 'projects/lib1/ng-package.json');
       expect(dest).toEqual('dist/lib1');
     });
-  });
+  }); // describe ngGetDestinationFromProjectFile
 
   describe('ngGetDestinationFromLibProject', () => {
     it('should return the destination', () => {
@@ -604,7 +606,7 @@ describe('ng-workspace', () => {
 
       expect(dest).toEqual('dist/lib1');
     });
-  });
+  }); // describe ngGetDestinationFromLibProject
 
   describe('ngGetLibProjectPackageInfo', () => {
     it('should return the library package info', () => {
@@ -630,32 +632,108 @@ describe('ng-workspace', () => {
         },
       });
     });
-  });
-});
+  }); // describe ngGetLibProjectPackageInfo
 
-describe('ngGetAppProjectPackageInfo', () => {
-  it('should return the application package info', () => {
-    const packageInfo = ngGetAppProjectPackageInfo('app');
+  describe('ngGetAppProjectPackageInfo', () => {
+    it('should return the application package info', () => {
+      const packageInfo = ngGetAppProjectPackageInfo('app');
 
-    expect(packageInfo).toEqual({
-      version: '1.2.3',
-      repository: {
-        type: 'git',
-        url: 'ssh://git@some-repo/app.git',
-      },
-      'ng-publish-to-git': {
+      expect(packageInfo).toEqual({
+        version: '1.2.3',
+        repository: {
+          type: 'git',
+          url: 'ssh://git@some-repo/app.git',
+        },
+        'ng-publish-to-git': {
+          packages: [
+            {
+              name: 'lib1',
+              publish: true,
+              repositoryUrl: 'https://some-repo.git',
+            },
+            {
+              name: 'app',
+              publish: false,
+            },
+          ],
+        },
+      });
+    });
+  }); // describe ngGetAppProjectPackageInfo
+
+  describe('determineCommitPrefix', () => {
+    let commandLineCommitPrefix: string;
+    let ngPublishToGitConfig: NgPublishToGitConfig;
+    let projectName: string;
+
+    beforeEach(() => {
+      commandLineCommitPrefix = 'CMD-LINE-123';
+
+      ngPublishToGitConfig = {
+        commitPrefix: 'GLOBAL-456',
         packages: [
           {
             name: 'lib1',
-            publish: true,
-            repositoryUrl: 'https://some-repo.git',
+            commitPrefix: 'LIB1-123',
           },
           {
-            name: 'app',
-            publish: false,
+            name: 'lib2',
           },
         ],
-      },
+       } as any;
+
+      projectName = 'lib1';
     });
-  });
-});
+
+    it ('should return the command line prefix first', () => {
+      // assert
+      expect(determineCommitPrefix(commandLineCommitPrefix, ngPublishToGitConfig, projectName)).toBe(commandLineCommitPrefix);
+    });
+
+    it ('should return the command line prefix first, even if empty', () => {
+      // assert
+      expect(determineCommitPrefix('', ngPublishToGitConfig, projectName)).toBe('');
+    });
+
+    it ('should return the package specific ng-publish-to-git config prefix second', () => {
+      // arrange
+      const expectedPrefix = ngPublishToGitConfig.packages.find(item => item.name === projectName).commitPrefix;
+
+      // assert
+      expect(determineCommitPrefix(undefined, ngPublishToGitConfig, projectName)).toBe(expectedPrefix);
+    });
+
+    it ('should return the package specific ng-publish-to-git config prefix second, even if empty', () => {
+      // arrange
+      const ngPublishToGitPackageConfig: NgPublishToGitPackageConfig =
+        ngPublishToGitConfig.packages.find(item => item.name === projectName);
+
+      ngPublishToGitPackageConfig.commitPrefix = '';
+
+      // assert
+      expect(determineCommitPrefix(undefined, ngPublishToGitConfig, projectName)).toBe('');
+    });
+
+    it ('should return the global ng-publish-to-git config prefix third', () => {
+      // assert
+      expect(determineCommitPrefix(undefined, ngPublishToGitConfig, 'non existing project name')).toBe('GLOBAL-456');
+    });
+
+    it ('should return the global ng-publish-to-git config prefix third, even if it is empty', () => {
+      // arrange
+      ngPublishToGitConfig.commitPrefix = '';
+
+      // assert
+      expect(determineCommitPrefix(undefined, ngPublishToGitConfig, 'non existing project name')).toBe('');
+    });
+
+    it ('should return an empty string if all else fails', () => {
+      // arrange
+      ngPublishToGitConfig.commitPrefix = undefined;
+
+      // assert
+      expect(determineCommitPrefix(undefined, ngPublishToGitConfig, 'non existing project name')).toBe('');
+    });
+  }); // describe determineCommitPrefix
+}); // describe ng-workspace
+
