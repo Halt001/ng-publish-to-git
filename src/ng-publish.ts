@@ -16,6 +16,7 @@ import { git } from './git';
 import * as thisModule from './ng-publish';
 import { npmBumpPatchVersion, npmPack } from './npm';
 import { execProcess, isWindowsPlatform } from './process';
+import chalk from 'chalk';
 
 export enum PublishState {
   NotPublishedDisabled = 0,
@@ -117,7 +118,14 @@ export async function workingDirIsClean(): Promise<boolean> {
 }
 
 export async function createTmpRepo(packageRepositoryUrl: string): Promise<string> {
-  const tmpRepoDir = await thisModule.dirAsync({ unsafeCleanup: true, prefix: 'tmp_ng-publish-to-git_' });
+  const unsafeCleanup = !commandLineArgs.debug;
+  const tmpRepoDir = await thisModule.dirAsync({ unsafeCleanup, prefix: 'tmp_ng-publish-to-git_' });
+
+  if (commandLineArgs.debug) {
+    // tslint:disable-next-line: no-console
+    console.log('Temp dir: ', chalk.bgRedBright.whiteBright(tmpRepoDir));
+  }
+
   await git(['init'], tmpRepoDir);
   await git(['remote', 'add', 'package-repo', packageRepositoryUrl], tmpRepoDir);
 

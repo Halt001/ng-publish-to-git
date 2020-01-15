@@ -3,7 +3,7 @@ import chalk from 'chalk';
 
 import { ProjectInfo, ngGetProjects } from './ng-workspace';
 import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
-import { processCommandLineArguments } from './argv';
+import { processCommandLineArguments, commandLineArgs } from './argv';
 
 const longestProjectNameLength = (projects: ProjectInfo[]): number => {
   return projects.reduce((maxLen, projectInfo) => Math.max(maxLen, projectInfo.projectName.length), 0);
@@ -48,6 +48,11 @@ const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
 (async () => {
   try {
     processCommandLineArguments();
+
+    if (commandLineArgs.debug) {
+      // tslint:disable-next-line: no-console
+      console.log(chalk.bgGreenBright.black('Debug option enabled'));
+    }
 
     const projects = ngGetProjects();
     const results = await ngPublishAllIfChanged(projects);
