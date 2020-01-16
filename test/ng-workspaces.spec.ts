@@ -1,11 +1,12 @@
 // tslint:disable: no-magic-numbers max-file-line-count
 import fs from 'fs';
+import { CommandLineArgs } from '../src/argv';
 
 import { ngGetDestinationFromProjectFile, NGLibProject, NGAppProject,
   ngGetDestinationFromLibProject, ngGetProjectFileNameFromLibProject,
   ngGetProjects, SafeJsonParse, throwOnInvalidLibProject, throwOnInvalidAppProject, throwOnInvalidAngularProjectSettings,
   NGPackage, PackageInfo, throwOnInvalidPackageInfo, ngGetLibProjectPackageInfo, ngGetAppProjectPackageInfo,
-  determineCommitPrefix, NgPublishToGitConfig, NgPublishToGitPackageConfig  } from '../src/ng-workspace';
+  determineCommitPrefix, NgPublishToGitConfig, NgPublishToGitPackageConfig, ngFilterProjectsWithCommandLineOptions  } from '../src/ng-workspace';
 
 
 jest.mock('fs');
@@ -92,6 +93,7 @@ describe('ng-workspace', () => {
             "url": "ssh://git@some-repo/app.git"
           },
           "ng-publish-to-git": {
+            "commitPrefix": "GLOBAL-PREFIX",
             "packages": [
               {
                 "name": "lib1",
@@ -100,6 +102,7 @@ describe('ng-workspace', () => {
               },
               {
                 "name": "app",
+                "commitPrefix": "APP-PREFIX",
                 "publish": false
               }
             ]
@@ -121,18 +124,24 @@ describe('ng-workspace', () => {
       expect(projects[0].root).toBe('projects/lib1');
       expect(projects[0].dest).toBe('dist/lib1');
       expect(projects[0].version).toBe('2.3.4');
+      expect(projects[0].commitPrefix).toBe('GLOBAL-PREFIX');
+      expect(projects[0].publish).toBe(true);
 
       expect(projects[1].projectName).toBe('lib2');
       expect(projects[1].projectType).toBe('library');
       expect(projects[1].root).toBe('projects/lib2');
       expect(projects[1].dest).toBe('dist/lib2');
       expect(projects[1].version).toBe('3.4.5');
+      expect(projects[1].commitPrefix).toBe('GLOBAL-PREFIX');
+      expect(projects[1].publish).toBe(false);
 
       expect(projects[2].projectName).toBe('app');
       expect(projects[2].projectType).toBe('application');
       expect(projects[2].root).toBe('projects/app');
       expect(projects[2].dest).toBe('dist/app');
       expect(projects[2].version).toBe('1.2.3');
+      expect(projects[2].commitPrefix).toBe('APP-PREFIX');
+      expect(projects[2].publish).toBe(false);
     });
   }); // describe ngGetProjects
 
@@ -645,6 +654,7 @@ describe('ng-workspace', () => {
           url: 'ssh://git@some-repo/app.git',
         },
         'ng-publish-to-git': {
+          commitPrefix: 'GLOBAL-PREFIX',
           packages: [
             {
               name: 'lib1',
@@ -653,6 +663,7 @@ describe('ng-workspace', () => {
             },
             {
               name: 'app',
+              commitPrefix: 'APP-PREFIX',
               publish: false,
             },
           ],
@@ -735,5 +746,46 @@ describe('ng-workspace', () => {
       expect(determineCommitPrefix(undefined, ngPublishToGitConfig, 'non existing project name')).toBe('');
     });
   }); // describe determineCommitPrefix
+
+  describe('ngFilterProjectsWithCommandLineOptions', () => {
+    it('should return all project unmodified if no package option is given', () => {
+      // arrange
+      const pkg = 'lib2';
+      const cmdLineArgs: CommandLineArgs = { };
+      const projects = ngGetProjects();
+
+      // act
+      const filteredProjects = ngFilterProjectsWithCommandLineOptions(projects, cmdLineArgs);
+
+      // assert
+      expect(filteredProjects).toBe(projects);
+    });
+
+    it('should filter the selected project and set publish to true', () => {
+      // arrange
+      const pkg = 'lib2';
+      const cmdLineArgs: CommandLineArgs = { package: pkg };
+      const projects = ngGetProjects().map(p => ({ ...p, publish: false }));
+
+      // act
+      const filteredProjects = ngFilterProjectsWithCommandLineOptions(projects, cmdLineArgs);
+
+      // assert
+      expect(filteredProjects.length).toEqual(1);
+      expect(filteredProjects[0].projectName).toEqual(pkg);
+      expect(filteredProjects[0].publish).toEqual(true);
+    });
+
+    it('should throw if the cmd line package is not found', () => {
+      // arrange
+      const pkg = 'non-existing-package';
+      const cmdLineArgs: CommandLineArgs = { package: pkg };
+      const projects = ngGetProjects();
+      const expectedErrorMsg = `Project: ${pkg} not found`;
+
+      // assert
+      expect(() => ngFilterProjectsWithCommandLineOptions(projects, cmdLineArgs)).toThrow(expectedErrorMsg);
+    });
+  }); // describe ngFilterProjectsWithCommandLineOptions
 }); // describe ng-workspace
 

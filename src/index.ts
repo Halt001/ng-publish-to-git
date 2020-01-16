@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+// tslint:disable: no-console
 import chalk from 'chalk';
 
-import { ProjectInfo, ngGetProjects } from './ng-workspace';
+import { ProjectInfo, ngGetProjects, ngFilterProjectsWithCommandLineOptions } from './ng-workspace';
 import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
 import { processCommandLineArguments, commandLineArgs } from './argv';
 
@@ -36,7 +37,6 @@ const logResult = (publishResult: PublishResult, maxNameLen: number) => {
       break;
   }
 
-  // tslint:disable-next-line: no-console
   console.log(msg);
 };
 
@@ -50,21 +50,34 @@ const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
     processCommandLineArguments();
 
     if (commandLineArgs.debug) {
-      // tslint:disable-next-line: no-console
-      console.log(chalk.bgGreenBright.black('Debug option enabled'));
+      console.log('Debug option:', chalk.green('enabled'));
     }
 
-    const projects = ngGetProjects();
+    if (commandLineArgs.package) {
+      console.log('Single project selected for publishing:', chalk.green(commandLineArgs.package));
+    }
+
+    const allProjects = ngGetProjects();
+    const projects = ngFilterProjectsWithCommandLineOptions(allProjects, commandLineArgs);
+
+    if (!projects.length) {
+      if (commandLineArgs.package) {
+        throw new Error(`Project: ${commandLineArgs.package} not found`);
+      } else {
+        throw new Error(chalk.red(`No projects configured for publishing`));
+      }
+    }
+
     const results = await ngPublishAllIfChanged(projects);
     const maxNameLen = longestProjectNameLength(projects);
 
-    // tslint:disable-next-line: no-console
     console.log();
     results.map(result => logResult(result, maxNameLen));
-    // tslint:disable-next-line: no-console
     console.log();
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    commandLineArgs.debug
+      ? console.error(error)
+      : console.log(chalk.red(error.message));
   } finally {
     stopWaitingAndExit();
   }

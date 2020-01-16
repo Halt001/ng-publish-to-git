@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { commandLineArgs } from './argv';
+import { commandLineArgs, CommandLineArgs } from './argv';
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
 
@@ -144,6 +144,22 @@ export function ngGetProjects(): ProjectInfo[] {
   }
 
   return projects;
+}
+
+export function ngFilterProjectsWithCommandLineOptions(projects: ProjectInfo[], cmdLineArgs: CommandLineArgs): ProjectInfo[] {
+  const projectNameToFind = (cmdLineArgs.package || '').toLowerCase();
+
+  if (!projectNameToFind) {
+    return projects;
+  }
+
+  const selectedProject = projects.find(project => project.projectName.toLowerCase() === projectNameToFind);
+
+  if (!selectedProject) {
+    throw new Error(`Project: ${cmdLineArgs.package} not found`);
+  }
+
+  return [{ ...selectedProject, publish: true }];
 }
 
 export function determineCommitPrefix(
