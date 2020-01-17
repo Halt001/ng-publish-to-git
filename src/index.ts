@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 // tslint:disable: no-console
 import chalk from 'chalk';
+const packageJson = require('../package.json');
 
 import { ProjectInfo, ngGetProjects, ngFilterProjectsWithCommandLineOptions } from './ng-workspace';
 import { PublishResult, PublishState, ngPublishAllIfChanged } from './ng-publish';
 import { processCommandLineArguments, commandLineArgs } from './argv';
+import { banner } from './banner';
+
+const displayBanner = (): void => {
+  console.log(banner);
+  console.log(`(Version: ${chalk.yellow(packageJson.version)})\n\n`);
+};
 
 const longestProjectNameLength = (projects: ProjectInfo[]): number => {
   return projects.reduce((maxLen, projectInfo) => Math.max(maxLen, projectInfo.projectName.length), 0);
@@ -47,6 +54,7 @@ const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
 
 (async () => {
   try {
+    displayBanner();
     processCommandLineArguments();
 
     if (commandLineArgs.debug) {
