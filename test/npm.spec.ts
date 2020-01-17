@@ -1,5 +1,6 @@
 import * as fromProcess from '../src/process';
-import { npmBumpPatchVersion, npmPack } from '../src/npm';
+import { npmBumpPatchVersion, npmPack, getLastLine } from '../src/npm';
+
 
 describe('npm', () => {
   let execFileAsyncSpy: jest.SpyInstance;
@@ -83,7 +84,9 @@ describe('npm', () => {
       const expectedTarballName = 'lib1-0.0.33.tgz';
 
       execFileAsyncSpy = jest.spyOn(fromProcess, 'execFileAsync')
-        .mockImplementation(_ => Promise.resolve({ stdout: `\n${expectedTarballName}\n` }) as fromProcess.ExecFileAsyncReturnType);
+        .mockImplementation(_ => Promise.resolve({
+          stdout: `other line1\nother line2\n${expectedTarballName}\n`,
+        }) as fromProcess.ExecFileAsyncReturnType);
 
       // act
       const version = await npmPack(sourceDir, targetDir);
@@ -98,4 +101,61 @@ describe('npm', () => {
       expect(version).toBe('lib1-0.0.33.tgz');
     });
   }); // describe npmPack
+
+  describe('getLastLine', () => {
+    it('should return the last line if only one line is present', () => {
+      // arrange
+      const input = 'filename';
+
+      // act
+      const output = getLastLine(input);
+
+      // assert
+      expect(output).toBe('filename');
+    });
+
+    it('should return the last line if only one line is present between new line chars and whitespace', () => {
+      // arrange
+      const input = '\n  filename  \n  ';
+
+      // act
+      const output = getLastLine(input);
+
+      // assert
+      expect(output).toBe('filename');
+    });
+
+    it('should return empty string if the input contains nothing but whitespace', () => {
+      // arrange
+      const input = '  \n    \n  ';
+
+      // act
+      const output = getLastLine(input);
+
+      // assert
+      expect(output).toBe('');
+    });
+
+    it('should return empty string if the input contains empty string', () => {
+      // arrange
+      const input = '';
+
+      // act
+      const output = getLastLine(input);
+
+      // assert
+      expect(output).toBe('');
+    });
+
+    it('should return the last line of a multiline input', () => {
+      // arrange
+      const input = 'one\ntwo\nthree\n';
+
+      // act
+      const output = getLastLine(input);
+
+      // assert
+      expect(output).toBe('three');
+    });
+  }); // describe getLastLine
 }); // describe npm
