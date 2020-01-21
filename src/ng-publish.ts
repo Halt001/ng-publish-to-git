@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { mapSeries, asyncify } from 'async';
 import tar from 'tar';
 import fs from 'fs';
+import { exec } from 'child_process';
 
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
@@ -17,6 +18,7 @@ import * as thisModule from './ng-publish';
 import { npmBumpPatchVersion, npmPack } from './npm';
 import { execProcess, isWindowsPlatform } from './process';
 import chalk from 'chalk';
+import { Readable } from 'stream';
 
 export enum PublishState {
   NotPublishedDisabled = 0,
@@ -101,9 +103,17 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
 }
 
 export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
-  const { projectName, version, repositoryUrl, dest, commitPrefix } = projectInfo;
+  const { projectName, version, repositoryUrl, dest, commitPrefix, prePublishToGit } = projectInfo;
 
   await thisModule.ngBuildProject(projectName);
+
+  // Execute a prePublishToGit script if present in the package.json config
+  if (prePublishToGit) {
+    const prePublishToGitOutput = await this.prePublishToGit(prePublishToGit);
+    const commitMessage = `Script prePublishToGit executed: ${prePublishToGitOutput}`;
+    console.log(commitMessage);
+  }
+
   await thisModule.tagProjectVersion(projectName, version);
   await thisModule.pushChangesAndTags();
 
@@ -111,6 +121,22 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
   await thisModule.packIntoTmpRepo(dest, tmpRepoDir);
   const tag = await thisModule.commitAndTagTmpRepo(projectName, version, commitPrefix, tmpRepoDir);
   await thisModule.pushTmpRepo(repositoryUrl, tag, tmpRepoDir);
+}
+
+export async function prePublishToGit(prePublishToGitCommand: string): Promise<Readable> {
+  const consoleOutput = chalk.dim('Executing prePublishiToGit with command: ') + prePublishToGitCommand;
+  console.log(consoleOutput);
+
+  const { stdout } = await exec(prePublishToGitCommand,
+    (error, stdout, stderr) => {
+      console.log('Error Executing prePublishiToGit: stdout: ', stdout);
+      console.log('Error Executing prePublishiToGit: stderr: ', stderr);
+      if (error !== null) {
+        console.log('Error Executing prePublishiToGit: error: ', error);
+      }
+    });
+
+  return stdout;
 }
 
 export async function workingDirIsClean(): Promise<boolean> {

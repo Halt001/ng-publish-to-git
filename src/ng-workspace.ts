@@ -4,7 +4,7 @@ import { commandLineArgs, CommandLineArgs } from './argv';
 const path = require('path');
 
 
-export type ProjectType = 'library'|'application';
+export type ProjectType = 'library' | 'application';
 
 export interface ProjectInfo {
   projectName: string;
@@ -15,6 +15,7 @@ export interface ProjectInfo {
   repositoryUrl: string;
   publish: boolean;
   commitPrefix: string;
+  prePublishToGit: string;
 }
 
 export interface NGLibProject {
@@ -59,6 +60,7 @@ export interface NgPublishToGitConfig {
 
 export interface PackageInfo {
   version: string;
+  prePublishToGit: string;
   repository?: {
     type: string;
     url: string;
@@ -103,6 +105,7 @@ export function ngGetProjects(): ProjectInfo[] {
         publish: undefined,
         repositoryUrl,
         commitPrefix,
+        prePublishToGit: undefined
       };
 
       switch (projectInfo.projectType) {
@@ -115,6 +118,7 @@ export function ngGetProjects(): ProjectInfo[] {
           projectInfo.dest = ngGetDestinationFromLibProject(projectName, ngLibProject);
           projectInfo.version = ngPackageInfo.version;
           projectInfo.publish = publish;
+          projectInfo.prePublishToGit = ngPackageInfo.prePublishToGit;
           break;
         }
 
