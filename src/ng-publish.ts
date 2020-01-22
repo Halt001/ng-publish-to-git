@@ -18,7 +18,6 @@ import * as thisModule from './ng-publish';
 import { npmBumpPatchVersion, npmPack } from './npm';
 import { execProcess, isWindowsPlatform } from './process';
 import chalk from 'chalk';
-import { Readable } from 'stream';
 
 export enum PublishState {
   NotPublishedDisabled = 0,
@@ -109,9 +108,8 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
 
   // Execute a prePublishToGit script if present in the package.json config
   if (prePublishToGit) {
-    const prePublishToGitOutput = await this.prePublishToGit(prePublishToGit);
-    const commitMessage = `Script prePublishToGit executed: ${prePublishToGitOutput}`;
-    console.log(commitMessage);
+    const prePublishToGitResult = await executePrePublishToGit(prePublishToGit);
+    console.log(chalk.dim(prePublishToGitResult));
   }
 
   await thisModule.tagProjectVersion(projectName, version);
@@ -123,20 +121,20 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
   await thisModule.pushTmpRepo(repositoryUrl, tag, tmpRepoDir);
 }
 
-export async function prePublishToGit(prePublishToGitCommand: string): Promise<Readable> {
-  const consoleOutput = chalk.dim('Executing prePublishiToGit with command: ') + prePublishToGitCommand;
-  console.log(consoleOutput);
+export async function executePrePublishToGit(prePublishToGitCommand: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const prePublishToGitCommandInfo = 'Executing prePublishToGit with command: ' + prePublishToGitCommand + '\n';
 
-  const { stdout } = await exec(prePublishToGitCommand,
-    (error, stdout, stderr) => {
-      console.log('Error Executing prePublishiToGit: stdout: ', stdout);
-      console.log('Error Executing prePublishiToGit: stderr: ', stderr);
-      if (error !== null) {
-        console.log('Error Executing prePublishiToGit: error: ', error);
-      }
-    });
+    exec(prePublishToGitCommand,
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(prePublishToGitCommandInfo + `Error prePublishToGit failed with error: ${error}`));
+          return;
+        }
 
-  return stdout;
+        resolve(prePublishToGitCommandInfo + 'Completed prePublishToGit');
+      });
+  });
 }
 
 export async function workingDirIsClean(): Promise<boolean> {
