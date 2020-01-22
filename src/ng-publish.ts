@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { mapSeries, asyncify } from 'async';
 import tar from 'tar';
 import fs from 'fs';
+import { exec } from 'child_process';
 
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
@@ -101,9 +102,16 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
 }
 
 export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
-  const { projectName, version, repositoryUrl, dest, commitPrefix } = projectInfo;
+  const { projectName, version, repositoryUrl, dest, commitPrefix, prePublishToGit } = projectInfo;
 
   await thisModule.ngBuildProject(projectName);
+
+  // Execute a prePublishToGit script if present in the package.json config
+  if (prePublishToGit) {
+    const prePublishToGitResult = await executePrePublishToGit(prePublishToGit);
+    console.log(chalk.dim(prePublishToGitResult));
+  }
+
   await thisModule.tagProjectVersion(projectName, version);
   await thisModule.pushChangesAndTags();
 
@@ -111,6 +119,23 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
   await thisModule.packIntoTmpRepo(dest, tmpRepoDir);
   const tag = await thisModule.commitAndTagTmpRepo(projectName, version, commitPrefix, tmpRepoDir);
   await thisModule.pushTmpRepo(repositoryUrl, tag, tmpRepoDir);
+}
+
+export async function executePrePublishToGit(prePublishToGitCommand: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const prePublishToGitCommandInfo = chalk.dim('Executing: prePublishToGit with command: ' + prePublishToGitCommand);
+    console.log(prePublishToGitCommandInfo);
+
+    exec(prePublishToGitCommand,
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(error.toString()));
+          return;
+        }
+
+        resolve('Completed prePublishToGit');
+      });
+  });
 }
 
 export async function workingDirIsClean(): Promise<boolean> {

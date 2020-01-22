@@ -4,7 +4,7 @@ import { commandLineArgs, CommandLineArgs } from './argv';
 const path = require('path');
 
 
-export type ProjectType = 'library'|'application';
+export type ProjectType = 'library' | 'application';
 
 export interface ProjectInfo {
   projectName: string;
@@ -15,6 +15,7 @@ export interface ProjectInfo {
   repositoryUrl: string;
   publish: boolean;
   commitPrefix: string;
+  prePublishToGit: string;
 }
 
 export interface NGLibProject {
@@ -59,6 +60,9 @@ export interface NgPublishToGitConfig {
 
 export interface PackageInfo {
   version: string;
+  scripts?: {
+    prePublishToGit?: string;
+  }
   repository?: {
     type: string;
     url: string;
@@ -103,6 +107,7 @@ export function ngGetProjects(): ProjectInfo[] {
         publish: undefined,
         repositoryUrl,
         commitPrefix,
+        prePublishToGit: undefined
       };
 
       switch (projectInfo.projectType) {
@@ -115,9 +120,12 @@ export function ngGetProjects(): ProjectInfo[] {
           projectInfo.dest = ngGetDestinationFromLibProject(projectName, ngLibProject);
           projectInfo.version = ngPackageInfo.version;
           projectInfo.publish = publish;
+
+          if (ngPackageInfo.scripts && ngPackageInfo.scripts.prePublishToGit) {
+            projectInfo.prePublishToGit = ngPackageInfo.scripts.prePublishToGit;
+          }
           break;
         }
-
         case 'application': {
           const ngAppProject = ngProject as NGAppProject;
           const ngPackageInfo = ngGetAppProjectPackageInfo(projectName);
