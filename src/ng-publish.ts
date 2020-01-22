@@ -123,16 +123,17 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
 
 export async function executePrePublishToGit(prePublishToGitCommand: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const prePublishToGitCommandInfo = 'Executing prePublishToGit with command: ' + prePublishToGitCommand + '\n';
+    const prePublishToGitCommandInfo = chalk.dim('Executing: prePublishToGit with command: ' + prePublishToGitCommand);
+    console.log(prePublishToGitCommandInfo);
 
     exec(prePublishToGitCommand,
       (error, stdout, stderr) => {
         if (error) {
-          reject(new Error(prePublishToGitCommandInfo + `Error prePublishToGit failed with error: ${error}`));
+          reject(new Error(error.toString()));
           return;
         }
 
-        resolve(prePublishToGitCommandInfo + 'Completed prePublishToGit');
+        resolve('Completed prePublishToGit');
       });
   });
 }
