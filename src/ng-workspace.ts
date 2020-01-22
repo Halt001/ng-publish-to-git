@@ -60,7 +60,9 @@ export interface NgPublishToGitConfig {
 
 export interface PackageInfo {
   version: string;
-  prePublishToGit: string;
+  scripts?: {
+    prePublishToGit: string;
+  }
   repository?: {
     type: string;
     url: string;
@@ -118,10 +120,12 @@ export function ngGetProjects(): ProjectInfo[] {
           projectInfo.dest = ngGetDestinationFromLibProject(projectName, ngLibProject);
           projectInfo.version = ngPackageInfo.version;
           projectInfo.publish = publish;
-          projectInfo.prePublishToGit = ngPackageInfo.prePublishToGit;
+
+          if (ngPackageInfo.scripts && ngPackageInfo.scripts.prePublishToGit) {
+            projectInfo.prePublishToGit = ngPackageInfo.scripts.prePublishToGit;
+          }
           break;
         }
-
         case 'application': {
           const ngAppProject = ngProject as NGAppProject;
           const ngPackageInfo = ngGetAppProjectPackageInfo(projectName);
