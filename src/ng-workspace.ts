@@ -61,7 +61,7 @@ export interface NgPublishToGitConfig {
 export interface PackageInfo {
   version: string;
   scripts?: {
-    prePublishToGit: string;
+    prePublishToGit?: string;
   }
   repository?: {
     type: string;
