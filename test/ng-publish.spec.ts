@@ -6,11 +6,25 @@ import tar from 'tar';
 import { ProjectInfo } from '../src/ng-workspace';
 import { ngPublishIfChanged, ngProjectGetPublishTags, splitProjectTag, makeProjectTag,
   ngProjectHasChangesSinceTag, workingDirIsClean, commit, stageFiles, stageAllAndCommit,
-  tagProjectVersion, ngBuildProject, pushChangesAndTags, createTmpRepo, packIntoTmpRepo } from '../src/ng-publish';
+  tagProjectVersion, ngBuildProject, pushChangesAndTags, createTmpRepo, packIntoTmpRepo,
+  executePrePublishToGit } from '../src/ng-publish';
 
 import * as fromGit from '../src/git';
 import * as fromNpm from '../src/npm';
 import * as fromProcess from '../src/process';
+
+let childProcessMock: any;
+
+jest.mock('child_process', () => {
+  const originalModule = jest.requireActual('child_process');
+
+  childProcessMock =  {
+    __esModule: true,
+    ...originalModule,
+  };
+
+  return childProcessMock;
+});
 
 // tslint:disable-next-line: no-duplicate-imports
 import * as fromNgPublish from '../src/ng-publish';
@@ -539,6 +553,43 @@ describe('ng-publish', () => {
 
       // assert
       await expect(ngProjectHasChangesSinceTag(lib1Project, sinceTag)).rejects.toThrow('Git error');
+    });
+  });
+
+  describe('executePrePublishToGit', () => {
+    const originalExecFn = childProcessMock.exec;
+
+    beforeEach(() => {
+      childProcessMock.exec = jest.fn((cmd: string, cb: () => void) => { cb(); });
+    });
+
+    afterAll(() => {
+      childProcessMock.exec = originalExecFn;
+    });
+
+    it('should call exec with the prePublishToGit command', async () => {
+      // arrange
+      const prePublishToGitCommand = 'some command';
+
+      // act
+      const result = await executePrePublishToGit(prePublishToGitCommand);
+
+      // assert
+      expect(result).toBe('Completed prePublishToGit');
+      expect(childProcessMock.exec).toHaveBeenCalledWith(prePublishToGitCommand, expect.anything());
+    });
+
+    it('should return rejected promise when exec fails', async () => {
+      // arrange
+      const prePublishToGitCommand = 'some command';
+      childProcessMock.exec = jest.fn((cmd: string, cb: (error: string) => void) => { cb('oops'); });
+
+      // act
+      const resultPromise = executePrePublishToGit(prePublishToGitCommand);
+
+      // assert
+      await expect(resultPromise).rejects.toEqual(new Error('oops'));
+      expect(childProcessMock.exec).toHaveBeenCalledWith(prePublishToGitCommand, expect.anything());
     });
   });
 }); // describe ng-publish

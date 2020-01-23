@@ -109,6 +109,8 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
   // Execute a prePublishToGit script if present in the package.json config
   if (prePublishToGit) {
     const prePublishToGitResult = await executePrePublishToGit(prePublishToGit);
+
+    // tslint:disable-next-line: no-console
     console.log(chalk.dim(prePublishToGitResult));
   }
 
@@ -124,16 +126,15 @@ export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
 export async function executePrePublishToGit(prePublishToGitCommand: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const prePublishToGitCommandInfo = chalk.dim('Executing: prePublishToGit with command: ' + prePublishToGitCommand);
+
+    // tslint:disable-next-line: no-console
     console.log(prePublishToGitCommandInfo);
 
     exec(prePublishToGitCommand,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(error.toString()));
-          return;
-        }
-
-        resolve('Completed prePublishToGit');
+      (error, _stdout, _stderr) => {
+        error
+          ? reject(new Error(error.toString()))
+          : resolve('Completed prePublishToGit');
       });
   });
 }

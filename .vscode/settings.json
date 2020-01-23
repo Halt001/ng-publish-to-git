@@ -5,5 +5,7 @@
     "unmock",
     "xargs"
   ],
-  "files.trimTrailingWhitespace": true
+  "files.trimTrailingWhitespace": true,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2
 }

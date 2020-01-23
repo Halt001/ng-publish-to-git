@@ -81,6 +81,9 @@ describe('ng-workspace', () => {
           "repository": {
             "type": "git",
             "url": "ssh://git@some-repo/lib2.git"
+          },
+          "scripts": {
+            "prePublishToGit": "@echo executing fancy pre publish script"
           }
         }`;
       }
@@ -617,7 +620,7 @@ describe('ng-workspace', () => {
     });
   }); // describe ngGetDestinationFromLibProject
 
-  describe('ngGetLibProjectPackageInfo', () => {
+  describe('ngGetLibProjectPackageInfo without optional pre publish script', () => {
     it('should return the library package info', () => {
       const ngProject: NGLibProject = {
         projectType: 'library',
@@ -639,6 +642,33 @@ describe('ng-workspace', () => {
           type: 'git',
           url: 'ssh://git@some-repo/lib1.git',
         },
+      });
+    });
+
+    it('should return the library package info with optional pre publish script', () => {
+      const ngProject: NGLibProject = {
+        projectType: 'library',
+        root: 'projects/lib2',
+        architect: {
+          build: {
+            options: {
+              project: 'projects/lib2/ng-package.json',
+            },
+          },
+        },
+      };
+
+      const packageInfo = ngGetLibProjectPackageInfo('lib', ngProject);
+
+      expect(packageInfo).toEqual({
+        version: '3.4.5',
+        repository: {
+          type: 'git',
+          url: 'ssh://git@some-repo/lib2.git',
+        },
+        scripts: {
+          prePublishToGit: '@echo executing fancy pre publish script',
+        }
       });
     });
   }); // describe ngGetLibProjectPackageInfo

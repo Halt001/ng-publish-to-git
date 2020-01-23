@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // tslint:disable: no-console
 import chalk from 'chalk';
+// tslint:disable-next-line: no-var-requires
 const packageJson = require('../package.json');
 
 import { ProjectInfo, ngGetProjects, ngFilterProjectsWithCommandLineOptions } from './ng-workspace';

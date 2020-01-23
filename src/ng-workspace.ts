@@ -15,7 +15,7 @@ export interface ProjectInfo {
   repositoryUrl: string;
   publish: boolean;
   commitPrefix: string;
-  prePublishToGit: string;
+  prePublishToGit?: string;
 }
 
 export interface NGLibProject {
@@ -62,7 +62,7 @@ export interface PackageInfo {
   version: string;
   scripts?: {
     prePublishToGit?: string;
-  }
+  };
   repository?: {
     type: string;
     url: string;
@@ -107,7 +107,6 @@ export function ngGetProjects(): ProjectInfo[] {
         publish: undefined,
         repositoryUrl,
         commitPrefix,
-        prePublishToGit: undefined
       };
 
       switch (projectInfo.projectType) {
