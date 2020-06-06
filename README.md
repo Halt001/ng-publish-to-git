@@ -1,6 +1,8 @@
 # ng-publish-to-git
 
-Publishes your Angular library to a git repo instead of npm. It also labels the source and the package in their respective repo's.
+Publishes your Angular library to a git repository instead of npm. It also labels the source and the package in their respective repository's. Version numbers are automatically bumped and there is a detection of changes. Unchanged projects are not published. 
+
+If needed version number can always be changed manually but be careful with lowering version numbers as collisions may occur with existing tags.
 
 ## Install
 
@@ -50,9 +52,9 @@ This option produces a little more output for solving problems, also the tempora
 
 The package repository will contain no branches, only tags. You need one package repository for each library but you can have the source for multiple libraries in one repository.
 
-After a successful publish you can install it as a dependency in your Angular application line a normal dependency with the only difference being that you need to specify during install that it comes from a git repo.
+After a successful publish you can install it as a dependency in your Angular application line a normal dependency with the only difference being that you need to specify during install that it comes from a git repository.
 
-***Examples:***  
+**Examples:**  
 npm install git+ssh://git@github.com:npm/some-lib.git#v1.0.27  
 npm install git+ssh://git@github.com:npm/some-lib#semver:^5.0  
 npm install git+https://isaacs@github.com/npm/some-lib.git   
@@ -68,12 +70,12 @@ The _ng-publish-to-git_ configuration in the `package.json` file consists of an 
 This is the global commit prefix it will be used for all packages that do not have a prefix defined at the package level.
 
 **packages** (required)  
-This is an array of package configurations for each individual package
+This is an array of package configurations for each individual package.
 
 At the package level you have the following keys available:  
 
-**name** (required)
-The name of the library package
+**name** (required)  
+The name of the library package.
 
 **commitPrefix** (optional)  
 A per package override of the global commit prefix.
