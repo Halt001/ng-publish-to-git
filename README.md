@@ -40,7 +40,7 @@ After that you can run _ng-publish-to-git_ from the project root directory with 
 * --commit-prefix your-prefix
 * --package package-name
 * --debug
-* --prod and --no-prod
+* --prod & --no-prod
 
 **--commit-prefix your-prefix**  
 This prefixes all commits to both the source and the package repository with the given prefix. This prefix will be the same for all libraries in your source project. Individual prefixes can also be set in the _ng-publish-to-git_ configuration.
