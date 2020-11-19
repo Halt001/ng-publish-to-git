@@ -9,6 +9,7 @@ import { ngPublishIfChanged, ngProjectGetPublishTags, splitProjectTag, makeProje
   tagProjectVersion, ngBuildProject, pushChangesAndTags, createTmpRepo, packIntoTmpRepo,
   executePrePublishToGit } from '../src/ng-publish';
 
+
 import * as fromGit from '../src/git';
 import * as fromNpm from '../src/npm';
 import * as fromProcess from '../src/process';
@@ -30,6 +31,7 @@ jest.mock('child_process', () => {
 import * as fromNgPublish from '../src/ng-publish';
 // tslint:disable-next-line: no-duplicate-imports
 import { PublishResult, PublishState } from '../src/ng-publish';
+import { CommandLineArgs } from '../src/argv';
 
 function semVerIncreasePatch(version: string): string {
   const groups = version.match(/(\d+.\d+.)(\d+)/);
@@ -242,7 +244,7 @@ describe('ng-publish', () => {
 
       // assert
       await expect(ngPublishIfChanged(lib1Project)).resolves.toEqual(expectedPublishResult);
-      expect(ngBuildProjectSpy).toHaveBeenCalledWith(projectName);
+      expect(ngBuildProjectSpy).toHaveBeenCalledWith(projectName, {});
       expect(tagProjectVersionSpy).toHaveBeenCalledWith(projectName, version);
       expect(pushChangesAndTagsSpy).toHaveBeenCalled();
       expect(packIntoTmpRepoSpy).toHaveBeenCalledWith(lib1Project.dest, './tmp');
@@ -437,10 +439,41 @@ describe('ng-publish', () => {
     it('should call ng build with the project name', async () => {
       // arrange
       const projectName = 'lib1';
+      const cmdLineArgs: CommandLineArgs = { prod: undefined };
 
       // assert
-      await expect(ngBuildProject(projectName)).resolves.toBeUndefined();
+      await expect(ngBuildProject(projectName, cmdLineArgs)).resolves.toBeUndefined();
+      expect(execProcessSpy).toHaveBeenCalledWith('ng', ['build', projectName, '--prod'], { verbose: false });
+    });
+
+    it('should call ng build without --prod when prod=false', async () => {
+      // arrange
+      const projectName = 'lib1';
+      const cmdLineArgs: CommandLineArgs = { prod: false };
+
+      // assert
+      await expect(ngBuildProject(projectName, cmdLineArgs)).resolves.toBeUndefined();
       expect(execProcessSpy).toHaveBeenCalledWith('ng', ['build', projectName], { verbose: false });
+    });
+
+    it('should call ng build with --prod when prod is undefined', async () => {
+      // arrange
+      const projectName = 'lib1';
+      const cmdLineArgs: CommandLineArgs = { prod: undefined };
+
+      // assert
+      await expect(ngBuildProject(projectName, cmdLineArgs)).resolves.toBeUndefined();
+      expect(execProcessSpy).toHaveBeenCalledWith('ng', ['build', projectName, '--prod'], { verbose: false });
+    });
+
+    it('should call ng build with --prod when prod is true', async () => {
+      // arrange
+      const projectName = 'lib1';
+      const cmdLineArgs: CommandLineArgs = { prod: true };
+
+      // assert
+      await expect(ngBuildProject(projectName, cmdLineArgs)).resolves.toBeUndefined();
+      expect(execProcessSpy).toHaveBeenCalledWith('ng', ['build', projectName, '--prod'], { verbose: false });
     });
 
     it('should call ng build using ng.cmd on windows with the project name', async () => {
@@ -451,7 +484,7 @@ describe('ng-publish', () => {
 
       // assert
       await expect(ngBuildProject(projectName)).resolves.toBeUndefined();
-      expect(execProcessSpy).toHaveBeenCalledWith('ng.cmd', ['build', projectName], { verbose: false });
+      expect(execProcessSpy).toHaveBeenCalledWith('ng.cmd', ['build', projectName, '--prod'], { verbose: false });
     });
   }); // describe ngBuildProject'
 

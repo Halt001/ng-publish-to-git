@@ -8,7 +8,7 @@ import { exec } from 'child_process';
 // tslint:disable-next-line: no-var-requires
 const path = require('path');
 
-import { commandLineArgs } from './argv';
+import { CommandLineArgs, commandLineArgs } from './argv';
 import { ProjectInfo } from './ng-workspace';
 import { git } from './git';
 
@@ -104,7 +104,7 @@ export async function ngPublishIfChanged(projectInfo: ProjectInfo): Promise<Publ
 export async function ngPublish(projectInfo: ProjectInfo): Promise<void> {
   const { projectName, version, repositoryUrl, dest, commitPrefix, prePublishToGit } = projectInfo;
 
-  await thisModule.ngBuildProject(projectName);
+  await thisModule.ngBuildProject(projectName, commandLineArgs);
 
   // Execute a prePublishToGit script if present in the package.json config
   if (prePublishToGit) {
@@ -253,12 +253,18 @@ export function splitProjectTag(tag: string): { projectName: string, version: st
     : null;
 }
 
-export async function ngBuildProject(projectName: string): Promise<void> {
+export async function ngBuildProject(projectName: string, cmdLineArgs: CommandLineArgs = {}): Promise<void> {
   const ngProcessName = isWindowsPlatform()
     ? 'ng.cmd'
     : 'ng';
 
-  await execProcess(ngProcessName, ['build', projectName], { verbose: false });
+  const args = [
+    'build',
+    projectName,
+    ...(cmdLineArgs.prod !== false ? ['--prod'] : []),
+  ];
+
+  await execProcess(ngProcessName, args, { verbose: false });
 }
 
 function prefixCommitMessage(commitPrefix: string, message: string): string {

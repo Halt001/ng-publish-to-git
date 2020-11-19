@@ -66,6 +66,12 @@ const stopWaitingAndExit = () => keepNodeAliveTimer.unref();
       console.log('Single project selected for publishing:', chalk.green(commandLineArgs.package));
     }
 
+    const buildFlag = commandLineArgs['prod'] === false
+      ? 'no flags are used'
+      : '--prod';
+
+    console.log('Build flag:', chalk.green(buildFlag));
+
     const allProjects = ngGetProjects();
     const projects = ngFilterProjectsWithCommandLineOptions(allProjects, commandLineArgs);
 
