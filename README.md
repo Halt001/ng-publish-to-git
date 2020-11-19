@@ -42,13 +42,13 @@ After that you can run _ng-publish-to-git_ from the project root directory with 
 * --debug
 * --prod and --no-prod
 
-**--commit-prefix your-prefix**
+**--commit-prefix your-prefix**  
 This prefixes all commits to both the source and the package repository with the given prefix. This prefix will be the same for all libraries in your source project. Individual prefixes can also be set in the _ng-publish-to-git_ configuration.
 
-**--package package-name**
+**--package package-name**  
 If you have more than one library in your project this option will let you publish only the given library package, the others will remain unpublished.
 
-**--debug**
+**--debug**  
 This option produces a little more output for solving problems, also the temporary directory where the package is created will not be deleted afterwards and its path will be shown.
 
 The package repository will contain no branches, only tags. You need one package repository for each library but you can have the source for multiple libraries in one repository.
@@ -63,11 +63,11 @@ Examples:
 --prod=false  
 --no-prod  
 
-**Examples:**
-npm install git+ssh://git@github.com:npm/some-lib.git#v1.0.27
-npm install git+ssh://git@github.com:npm/some-lib#semver:^5.0
-npm install git+https://isaacs@github.com/npm/some-lib.git
-npm install git://github.com/npm/some-lib.git#v1.0.27
+**Examples:**  
+npm install git+ssh://git@github.com:npm/some-lib.git#v1.0.27  
+npm install git+ssh://git@github.com:npm/some-lib#semver:^5.0  
+npm install git+https://isaacs@github.com/npm/some-lib.git  
+npm install git://github.com/npm/some-lib.git#v1.0.27  
 
 For more info see the documentation of [`npm install`](https://docs.npmjs.com/cli/install)
 
@@ -75,24 +75,24 @@ For more info see the documentation of [`npm install`](https://docs.npmjs.com/cl
 
 The _ng-publish-to-git_ configuration in the `package.json` file consists of an object with the following keys at root level:
 
-**commitPrefix** (optional)
+**commitPrefix** (optional)  
 This is the global commit prefix, it will be used for all packages that do not have a prefix defined at the package level.
 
-**packages** (required)
+**packages** (required)  
 This is an array of package configurations for each individual package.
 
 At the package level you have the following keys available:
 
-**name** (required)
+**name** (required)  
 The name of the library package.
 
-**commitPrefix** (optional)
+**commitPrefix** (optional)  
 A per package override of the global commit prefix.
 
-**publish** (optional)
+**publish** (optional)  
 A boolean controlling whether or not the package should be published if no package name is specified on the command line. By default packages will be published (if changed) but it might be beneficial to be able to suppress publishing by setting this to false.
 
-**repositoryUrl** (required)
+**repositoryUrl** (required)  
 The url to be used to access the package repository. For example:
 ```
 "repositoryUrl": "https://some-repo-for-lib1-packages.git"
