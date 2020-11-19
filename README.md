@@ -40,6 +40,7 @@ After that you can run _ng-publish-to-git_ from the project root directory with 
 * --commit-prefix your-prefix
 * --package package-name
 * --debug
+* --prod and --no-prod
 
 **--commit-prefix your-prefix**
 This prefixes all commits to both the source and the package repository with the given prefix. This prefix will be the same for all libraries in your source project. Individual prefixes can also be set in the _ng-publish-to-git_ configuration.
@@ -48,11 +49,19 @@ This prefixes all commits to both the source and the package repository with the
 If you have more than one library in your project this option will let you publish only the given library package, the others will remain unpublished.
 
 **--debug**
-This option produces a little more output for solving problems, also the temporary directory where the package is created will not be deleted afterwards and its path will be shown. 
+This option produces a little more output for solving problems, also the temporary directory where the package is created will not be deleted afterwards and its path will be shown.
 
 The package repository will contain no branches, only tags. You need one package repository for each library but you can have the source for multiple libraries in one repository.
 
 After a successful publish you can install the library as a dependency in your Angular application like a normal dependency with the only difference being that you need to specify during install that it comes from a git repository.
+
+**--prod & --no-prod**  
+This option controls whether or not the ng build flag --prod is used. When no option is provided --prod is passed to ng build by default.
+
+Examples:  
+--prod  
+--prod=false  
+--no-prod  
 
 **Examples:**
 npm install git+ssh://git@github.com:npm/some-lib.git#v1.0.27
@@ -80,7 +89,7 @@ The name of the library package.
 **commitPrefix** (optional)
 A per package override of the global commit prefix.
 
-**publish** (optional)  
+**publish** (optional)
 A boolean controlling whether or not the package should be published if no package name is specified on the command line. By default packages will be published (if changed) but it might be beneficial to be able to suppress publishing by setting this to false.
 
 **repositoryUrl** (required)
